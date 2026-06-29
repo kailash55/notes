@@ -133,3 +133,34 @@ Over time, dedicated benchmarks were built:
   - Adjusting decisions accordingly
   - Counterfactual reasoning (thinking "what if I had done X instead?")
   - Meta-reflection (reflecting on the reflection process itself)
+
+### Memory
+
+Memory is what allows an agent to remember things — not just within a single reply, but across a long conversation or a complex multi-step task. Without memory, an agent forgets what happened earlier and cannot make well-informed decisions.
+
+Agents use two types of memory:
+- **Short-term memory** — for keeping track of what is happening right now in the current task
+- **Long-term memory** — for storing knowledge and past experiences that can be useful later
+
+Memory is different from tool use. Tool use connects the agent to outside resources. Memory is about the agent retaining context from its own past interactions.
+
+**Research on extending context with memory:**
+
+A big challenge for LLMs is that they can only "see" a limited amount of text at once (context window). Memory mechanisms help work around this:
+
+- **ReadAgent** — groups content into chunks, compresses them into memories, and retrieves relevant passages when needed. Tested on datasets like QUALITY, NarrativeQA, and QMSum
+- **MemGPT** — manages a tiered memory system (like a computer's RAM vs. disk storage). Tested on NaturalQuestions and multi-session chat datasets
+- **A-MEM** — a more advanced memory architecture, evaluated on the LoCoMo benchmark
+
+**Episodic memory** (remembering specific events with context) has its own benchmark that uses synthetically generated book chapters and events, with LLM-based judges measuring accuracy and relevance.
+
+**StreamBench** is a harder benchmark that tests whether agents can use memory of past interactions and external feedback to keep improving over time. It covers diverse tasks including text-to-SQL, ToolBench, and HotpotQA.
+
+**Memory for better decision-making:**
+
+Memory also helps agents make better real-time decisions and learn from past actions:
+
+- **Reflexion** — tracks success rates on tasks like HotpotQA and ALFWorld, using memory of past failures to do better next time
+- **RAISE** — adds a two-part memory system on top of the ReAct framework, evaluated via human judgment on quality and efficiency
+- **KARMA** — tests memory in household tasks using metrics like success rate, retrieval accuracy, and memory hit rate
+- **LTM-benchmark** — tests conversational agents across long, multi-task sessions with frequent topic switches. Key finding: LLMs do well in single tasks but struggle when tasks are interleaved. Interestingly, a smaller LLM with a good long-term memory system can match or even beat a larger LLM with a bigger context window
