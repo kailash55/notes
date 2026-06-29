@@ -164,3 +164,124 @@ Memory also helps agents make better real-time decisions and learn from past act
 - **RAISE** — adds a two-part memory system on top of the ReAct framework, evaluated via human judgment on quality and efficiency
 - **KARMA** — tests memory in household tasks using metrics like success rate, retrieval accuracy, and memory hit rate
 - **LTM-benchmark** — tests conversational agents across long, multi-task sessions with frequent topic switches. Key finding: LLMs do well in single tasks but struggle when tasks are interleaved. Interestingly, a smaller LLM with a good long-term memory system can match or even beat a larger LLM with a bigger context window
+
+## Application-Specific Agents Evaluation
+
+So far we looked at general agent capabilities. Now we look at agents built for specific real-world use cases — like browsing the web, writing code, doing science, or having conversations. These are called application-specific agents, and they each need their own tailored way of being tested.
+
+The main categories covered here are: web agents, software engineering agents, scientific agents, and conversational agents.
+
+**How agent benchmarks are structured:**
+
+Every agent benchmark has three parts:
+
+1. **Tasks** — a set of clearly defined things the agent needs to do, ranging from simple (navigate a website) to complex (solve a scientific problem)
+2. **Environment** — the setting where the agent operates. This could be a simulation (static or dynamic), a real-world setup, or include things like user simulations, available tools, and rules the agent must follow
+3. **Evaluation metrics** — how performance is measured. Common metrics are success rate, efficiency, and accuracy. These can be measured at a fine-grained level (did the agent take the right individual action?) or at a high level (did the agent complete the whole task end-to-end?)
+
+### Web Agents
+
+Web agents are AI systems that browse websites and complete tasks on them — like booking a flight, shopping online, or filling out a form. Evaluating them means checking how well they complete tasks, navigate websites, and follow safety and compliance rules.
+
+Benchmarks for web agents have evolved in three generations:
+
+**1. Early simulation environments**
+
+The first benchmarks were simple simulated web environments:
+- **MiniWob** and **MiniWoB++** — basic environments that tested navigation and task automation. They set the foundation and identified key challenges in web-based tasks
+
+**2. Static datasets for offline testing**
+
+Next came static datasets that allow reproducible, offline evaluation:
+- **WebShop** — simulates online shopping, from product search all the way to checkout
+- **Mind2Web** and **WebVoyager** — cover a wider range of web interactions, testing the agent's ability to navigate complex site structures and hit intermediate goals along the way
+
+These made it easier to compare different approaches against each other consistently.
+
+**3. Dynamic, real-world-like benchmarks**
+
+More recent benchmarks try to simulate the actual messiness of the real web:
+- **WebLinX** — the web interface keeps changing, testing how well the agent adapts on the fly
+- **WebArena** and **Visual-WebArena** — include realistic UI elements and visual cues; the agent must interpret what it sees, not just follow a script
+- **WorkArena** and **WorkArena++** — simulate complex office/enterprise tasks that require coordinating many actions to reach a long-term goal
+- **MMInA** — multimodal and multi-hop evaluation (the agent needs to connect information across multiple steps and sources)
+- **AssistantBench** — focuses on realistic, time-consuming tasks spread across multiple websites
+- **WebCanvas** — measures completion of key navigational checkpoints, giving a more granular picture of where exactly an agent succeeds or fails
+- **STWebAgentBench** — combines static and dynamic elements to test agents under varied conditions
+
+**What is still missing:**
+
+Most benchmarks still focus mainly on task completion and navigation speed. Important real-world concerns like policy compliance, risk mitigation, and safety protocols are largely untested. As web agents move toward actual deployment, these gaps will need to be addressed.
+
+### Software Engineering Agents
+
+Software engineering (SWE) agents are AI systems that can write code, fix bugs, and handle real programming tasks. Evaluating them has gone through a clear progression from simple coding tests to full real-world software development scenarios.
+
+**Early benchmarks — simple coding tasks:**
+
+- **HumanEval** and **MBPP** — the first benchmarks. They tested short, self-contained coding problems, mostly algorithm-style questions. Good starting point but too simple to reflect real software work
+- **Open-domain coding benchmarks** — a step forward, covering application-specific scenarios and interactions with libraries and tools. Still limited to simpler tasks
+
+**SWE-bench — the game changer:**
+
+**SWE-bench** was built from real GitHub issues. It provides the full context a developer would have: a detailed issue description, the complete code repository, an execution environment (Docker), and automated tests to verify the fix. This is much closer to actual software engineering work.
+
+Several variants were created to improve reliability:
+- **SWE-bench Lite** — 300 focused bug-fixing issues, filtered to remove overly complex multi-file edits
+- **SWE-bench LiteS** — further cleaned up by removing issues where the solution was too easy to guess or lacked enough description
+- **SWE-bench Verified** — only includes issues with clear descriptions and strong test cases
+- **SWE-bench+** — fixes flaws in the original like solution leakage (where hints made tasks too easy) and weak tests
+- **SWE-bench (Java version)** — extends the benchmark to Java codebases
+- **SWE-bench Multimodal** — tests agents on JavaScript apps that have visual elements (images, UI), highlighting how hard cross-language and visual problem-solving is — top systems still struggle here
+
+**Other notable benchmarks:**
+
+- **TDD-Bench Verified** and **SWT-Bench** — test whether an agent can write tests from a GitHub issue (test-driven development style)
+- **ITBench** — focuses on real-world IT automation tasks
+- **AgentBench** — evaluates how well SWE agents interact with dynamic environments in real time, not just whether their code is correct
+- **SWELancer** — the newest direction: benchmarks based on real freelance coding jobs, where agent performance is tied to monetary value. This tests long-term reasoning and decision-making in genuinely complex, open-ended scenarios
+
+### Scientific Agents
+
+Scientific agents are AI systems that can assist with actual research — generating ideas, designing experiments, writing code to run them, and even reviewing papers. Evaluating these agents has progressed from basic science knowledge tests to full research workflow simulations.
+
+**Early benchmarks — knowledge and reasoning:**
+
+- **ARC**, **ScienceQA**, **ScienceWorld** — tested basic scientific knowledge and reasoning
+- **QASPER**, **QASA**, **MS²** — tested whether agents could understand and summarize scientific literature
+- **SciRiff** — broader coverage, testing whether agents can follow user instructions across different scientific domains
+
+**Newer benchmarks — the full research process:**
+
+Recent work has moved toward testing agents on actual stages of the scientific research pipeline:
+
+1. **Scientific ideation** — can the agent come up with new, creative, feasible research ideas on its own, comparable to what a human expert would suggest?
+2. **Experiment design** — can it plan experiments properly? This includes forming hypotheses, choosing the right methods, and laying out procedures rigorously. Tested by **AAAR-1.0**
+3. **Code generation for experiments** — can it write accurate, runnable scientific code? Tested by **SciCode**, **ScienceAgentBench**, **SUPER**, and **COREBench**
+4. **Peer review generation** — can it write a proper, substantive review of a research paper that matches the quality of a human reviewer?
+
+**Unified frameworks — testing the whole research cycle:**
+
+Some benchmarks now combine multiple research tasks into one platform:
+
+- **AAAR-1.0** — covers equation inference, experiment design, identifying weaknesses in papers, and review critique — all requiring deep domain expertise
+- **MLGym** — a gym-like environment with 13 AI research challenges covering the full workflow from hypothesis generation to experimentation and analysis
+- **DiscoveryWorld** — a virtual text-based world with 120 diverse tasks simulating complete scientific discovery cycles, from forming a hypothesis to interpreting results
+- **LAB-Bench** — focused specifically on biology research, testing agents on experiment design and interpreting texts, images, and tables
+
+### Conversational Agents
+
+Conversational agents are customer-facing AI systems — think of a customer service chatbot. They need to handle user requests across a multi-turn conversation, while following the company's specific policies and calling the right tools or APIs at the right time.
+
+**Two main ways to evaluate them:**
+
+1. **Prefix-based evaluation** — collect real conversations with all the right actions recorded. Then give the agent the first part of the conversation and ask it to predict the next step. Simple but rigid
+2. **Simulation-based evaluation** — simulate both the environment and the user. The agent is judged on whether it reaches the correct end state and gives the right answer to the user. More flexible and realistic
+
+**Key benchmarks:**
+
+- **ABCD (Action-Based Conversations Dataset)** — over 10,000 customer-agent conversations with 55 different user intents, each requiring a specific sequence of actions defined by a policy. Collected via crowdsourcing
+- **MultiWOZ** and **SMCalFlow** — other well-known crowdsourced task-oriented dialogue benchmarks
+- **ALMITA** — built using a fully automated pipeline: an LLM generates intents, policies, tool APIs, and conversation graphs, then conversation paths are sampled and sliced into test cases. After manual filtering: 192 conversations, 14 intents, 1,420 tests
+- **τ-Bench** — simulates dynamic conversations between a real agent and an LLM-simulated user in two customer service domains (airline and retail). Each domain has its own databases, APIs, and a policy document the agent must follow. Includes 115 retail tasks and 50 airline tasks
+- **IntellAgent** — an open-source framework that takes a company's database schema and policy document as input, then automatically constructs test scenarios, simulates dialogues between the agent and a user, and has a separate critique agent analyze the conversation and give detailed feedback on policy compliance
