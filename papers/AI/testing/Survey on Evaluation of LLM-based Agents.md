@@ -79,3 +79,57 @@ All these benchmarks point to five key skills an agent needs for good planning:
 3. Catching and fixing its own mistakes (self-correction)
 4. Understanding cause and effect (causal reasoning)
 5. Knowing when to change its own plan (meta-planning)
+
+### Function Calling & Tool Use
+
+For an LLM agent to be truly useful, it needs to be able to use external tools — like calling an API, running a search, doing a calculation, etc. This is called function calling or tool use, and it is one of the most important abilities for building real-world agents.
+
+Early agents used simple tools like retrieval systems (fetching relevant documents). Later, more general-purpose tool use came in — examples include ToolFormer, Chameleon, and MRKL.
+
+**How function calling works — step by step:**
+
+1. **Intent recognition** — figuring out that a tool is needed based on what the user asked
+2. **Function selection** — picking the right tool for the job
+3. **Parameter mapping** — pulling out the right values from the conversation and feeding them into the tool
+4. **Function execution** — actually running the tool
+5. **Response generation** — taking the tool's output and turning it into a useful reply for the user
+
+**How it has been evaluated over time:**
+
+Early benchmarks like ToolAlpaca, APIBench, ToolBench, and BFCL v1 tested simple, one-step tool calls with clearly stated parameters. They used rule-based matching to check if the agent called the right function with the right inputs. These were a good starting point but did not reflect the messiness of real conversations.
+
+As tool use got more complex, benchmarks improved too:
+
+- **BFCL v2 & v3** — added multi-turn conversations and multi-step tool use, getting closer to real-world scenarios
+- **ToolSandbox** — introduced stateful tools (where the tool's state changes between calls), implicit dependencies, and dynamic evaluation
+- **Seal-Tools** — tested nested tool calls, where one tool's output feeds into another
+- **API-Bank** — used realistic dialogue-based evaluations with large training datasets
+- **NexusRaven** — focused on diverse, general tool-use scenarios
+- **API-Blend** — built a large dataset covering API detection, slot filling, and sequencing of tool calls — useful for both training and testing
+- **RestBench** — tested using multiple APIs together to handle complex user requests
+- **APIGen** — automated pipeline to generate high-quality function-calling test data
+- **StableToolBench** — solved the problem of real APIs going down by using a virtual API server with caching
+
+More recent benchmarks push into even harder territory:
+
+- **ComplexFuncBench** — tests scenarios where parameters are not explicitly stated, the user has specific constraints, and long context needs to be managed
+- **NESTFUL** — tests nested API call sequences where the output of one call becomes the input to the next
+
+### Self-Reflection
+
+Self-reflection is the agent's ability to look at its own work, recognize mistakes, and improve — all on its own, based on feedback. This is important because in long multi-step tasks, errors will happen, and a good agent should be able to catch and fix them without a human stepping in.
+
+Early research on this did not have dedicated benchmarks. Instead, researchers took existing reasoning and planning tests (like AGIEval, MedMCQA, ALFWorld, MiniWoB++) and turned them into multi-turn feedback loops — basically, give the agent feedback and see if it can fix its answer. The problem with this approach was that it only measured whether the final answer got corrected, which is too rough a measure. Also, improvements often depended on clever prompting tricks rather than genuine self-reflection ability.
+
+Over time, dedicated benchmarks were built:
+
+- **LLF-Bench** — a proper standardized benchmark for self-reflection across diverse decision-making tasks. It treats task instructions as part of the environment (not given directly to the agent), and allows randomizing the wording of instructions and feedback to prevent the agent from just memorizing patterns
+- **LLM-Evolve** — evaluates self-reflection on standard benchmarks like MMLU, where the agent learns from its past queries and feedback and uses them as examples to do better next time
+- **Coding-specific reflection** — researchers extended coding benchmarks like APPS and LiveCodeBench into interactive settings, specifically to test different types of feedback and how agents respond to them
+- **ReflectionBench** — takes a cognitive science angle, breaking self-reflection into detailed components:
+  - Noticing new information
+  - Using memory
+  - Updating beliefs when something unexpected happens
+  - Adjusting decisions accordingly
+  - Counterfactual reasoning (thinking "what if I had done X instead?")
+  - Meta-reflection (reflecting on the reflection process itself)
