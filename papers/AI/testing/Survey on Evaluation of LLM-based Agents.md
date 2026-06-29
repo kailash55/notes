@@ -285,3 +285,36 @@ Conversational agents are customer-facing AI systems — think of a customer ser
 - **ALMITA** — built using a fully automated pipeline: an LLM generates intents, policies, tool APIs, and conversation graphs, then conversation paths are sampled and sliced into test cases. After manual filtering: 192 conversations, 14 intents, 1,420 tests
 - **τ-Bench** — simulates dynamic conversations between a real agent and an LLM-simulated user in two customer service domains (airline and retail). Each domain has its own databases, APIs, and a policy document the agent must follow. Includes 115 retail tasks and 50 airline tasks
 - **IntellAgent** — an open-source framework that takes a company's database schema and policy document as input, then automatically constructs test scenarios, simulates dialogues between the agent and a user, and has a separate critique agent analyze the conversation and give detailed feedback on policy compliance
+
+## Generalist Agents Evaluation
+
+So far we have looked at agents built for specific jobs — web browsing, coding, science, conversations. Now we look at generalist agents — agents that can do many different types of tasks, not just one. As LLMs have become more powerful, agents have moved from narrow, application-specific use to much broader, general-purpose use. This requires a different, wider style of evaluation.
+
+**General reasoning and tool use:**
+
+These benchmarks test the core skills a general agent needs — multi-step reasoning, problem-solving, and using tools flexibly:
+
+- **GAIA** — 466 hand-crafted real-world questions testing reasoning, multimodal understanding (text + images), web navigation, and general tool use
+- **Galileo's Agent Leaderboard** — focuses on function calls and API usage in real-world applications like database queries, calculators, and web services
+- **AgentBench** — a suite of interactive environments including OS commands, SQL databases, digital games, and household tasks
+
+**Computer operating environments:**
+
+A step up from tool use — these benchmarks test whether agents can operate within a real computer system, running actual applications and handling complex tasks:
+
+- **OSWorld** — tests navigation and task execution across real operating system environments
+- **OmniACT** — similar focus on computer control and task coordination across multiple apps
+- **AppWorld** — agents must write and modify code, handle complex control flows, and avoid breaking things unintentionally
+
+**Professional / workplace environments:**
+
+The most ambitious category — these put agents in simulated workplaces and see if they can function like a human employee:
+
+- **TheAgentCompany** — simulates a small software company. The agent browses internal websites, writes code, runs programs, and communicates with simulated coworkers
+- **CRMArena** — simulates a large customer relationship management (CRM) system with interconnected data (accounts, orders, cases, knowledge articles). Tests multi-step operations via both UI and API, policy adherence, and complex information integration
+
+**Unified evaluation platforms:**
+
+As the number of benchmarks grows, there is a need for one place to compare agents across all of them:
+
+- **HAL (Holistic Agent Leaderboard)** — a standardized platform that aggregates multiple benchmarks covering coding, interactive applications, and safety assessments in one place
