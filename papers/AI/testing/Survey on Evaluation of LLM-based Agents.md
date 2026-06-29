@@ -39,3 +39,43 @@ The survey is organized into these main parts:
 - **Discussion** — current trends and future directions in agent evaluation
 
 One important clarification: this survey is specifically about evaluating LLM-based agents. It does not focus on standard LLM benchmarks like MMLU or GSM8K, and it does not go into agent architectures or design choices. It also does not deeply cover multi-agent systems, game agents, or embodied agents — though they are mentioned briefly. The sole focus is on how we evaluate these agents.
+
+## Agent Capabilities Evaluation
+
+LLM-based agents depend on a set of core abilities to do their job well. To understand what they can and cannot do, we need to evaluate these abilities carefully. This section focuses on four foundational capabilities of LLM-based agents.
+
+### Planning and Multi-Step Reasoning
+
+Planning and multi-step reasoning is basically the agent's ability to look at a big, complex problem and break it into smaller steps — and then figure out the right order to tackle those steps to reach a solution.
+
+Normal LLMs can answer questions in one shot, but many real tasks require 3 to 10 intermediate steps before you get to the final answer. This is called multi-step reasoning. Agents need to be good at this to work in the real world.
+
+To test this, researchers have created many different benchmarks — essentially test sets that measure how well an agent reasons across different types of problems:
+
+- **Math reasoning** — GSM8K, MATH, AQUA-RAT
+- **Multi-hop Q&A** (where you need to connect multiple pieces of info) — HotpotQA, StrategyQA, MultiRC
+- **Science reasoning** — ARC
+- **Logical reasoning** — FOLIO, P-FOLIO
+- **Puzzles** — Game of 24
+- **Common sense** — MUSR
+- **Hard reasoning tasks** — BBH
+
+Some of these benchmarks have been specifically adapted for agent-based testing, like HotpotQA and Game of 24, where the agent has to plan and use tools at the same time.
+
+Beyond these general benchmarks, researchers have also built more specialized frameworks just for testing agent planning:
+
+- **ToolEmu** — simulates tool-using scenarios and found that agents need to track state well and recover from mistakes
+- **MINT** — tests planning in interactive environments; even advanced LLMs struggle with long multi-step tasks
+- **PlanBench** — tests planning across many domains; found that LLMs are okay at short-term planning but poor at long-horizon strategic planning
+- **AutoPlanBench** — tests everyday planning scenarios; found that even the best LLM agents are worse than older classical symbolic planners
+- **FlowBench** — tests workflow planning in expert-level tasks
+- **ACPBench** — tests core reasoning skills
+- **Natural Plan** — tests real-world planning expressed in natural language; current best LLMs perform poorly, especially as tasks get more complex
+
+All these benchmarks point to five key skills an agent needs for good planning:
+
+1. Breaking down big problems into smaller sub-tasks
+2. Keeping track of what has happened so far (state tracking)
+3. Catching and fixing its own mistakes (self-correction)
+4. Understanding cause and effect (causal reasoning)
+5. Knowing when to change its own plan (meta-planning)
