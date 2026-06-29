@@ -318,3 +318,92 @@ The most ambitious category — these put agents in simulated workplaces and see
 As the number of benchmarks grows, there is a need for one place to compare agents across all of them:
 
 - **HAL (Holistic Agent Leaderboard)** — a standardized platform that aggregates multiple benchmarks covering coding, interactive applications, and safety assessments in one place
+
+## Frameworks for Agent Evaluation
+
+Benchmarks compare finished agents against a fixed set of tasks. Evaluation frameworks are different — they are tools that developers use throughout the building process to monitor, debug, and improve their agents continuously. You bring your own scenarios; the framework gives you the infrastructure to measure and analyze what is happening.
+
+The key differences from benchmarks:
+- Benchmarks use standardized test data; frameworks let you define your own scenarios
+- Benchmarks compare final systems; frameworks support the entire development and deployment lifecycle
+- Frameworks are general-purpose — they work across many agent types and use cases
+
+**Why a new kind of framework was needed:**
+
+Earlier evaluation tools (like OpenAI Evals) were built for simple single-call interactions — ask the model something, check the answer. But modern agentic workflows involve many steps, tool calls, and dynamic decision-making. That requires frameworks that can track multi-step reasoning, analyze full trajectories, and evaluate things like tool usage quality.
+
+**Popular frameworks:**
+
+- **LangSmith** and **AgentEvals** (by LangChain) — general-purpose agent evaluation and tracing
+- **Langfuse** — open-source observability and evaluation, uses OpenTelemetry infrastructure
+- **Google Vertex AI Evaluation Service** — Google's cloud-based evaluation service, also uses OpenTelemetry
+- **Arize AI** and **Galileo Agentic Evaluation** — commercial platforms for monitoring and evaluating agent quality
+- **Patronus AI** — evaluation focused on reliability and safety
+- **Databricks Mosaic AI Agent Evaluation** — primarily designed for RAG (Retrieval-Augmented Generation) style tasks
+- **Botpress Multi-Agent Evaluation System** and **AutoGen** — specifically support multi-agent systems
+
+**What all frameworks track:**
+
+All of these platforms monitor agent trajectories and measure common metrics like:
+- Task completion rate
+- Latency and execution speed
+- In some cases: throughput and memory usage
+
+Beyond basic monitoring, each framework adds its own methods for quality assessment. Evaluation can also happen at different levels of detail — from individual actions all the way up to full end-to-end task outcomes.
+
+**Final Response Evaluation:**
+
+Most frameworks use an LLM as a judge to evaluate the agent's final responses — basically, one AI grades another AI's output against a set of criteria. Some platforms (like Databricks Mosaic and PatronusAI) offer their own proprietary judge models built in. Most platforms also let you customize the evaluation metrics so you can measure quality and relevance in a way that fits your specific domain.
+
+**Stepwise Evaluation:**
+
+Instead of only checking the final answer, stepwise evaluation looks at each individual action the agent took along the way. This makes it much easier to find where exactly things went wrong.
+
+This includes:
+- Checking the text output at each step against predefined criteria
+- Checking whether the agent picked the right tool for that step
+- Verifying the tool was called with the right parameters and produced the correct output
+
+**Galileo's action advancement metric** is a notable addition here — instead of just marking a step as pass or fail, it measures whether each step actually moved the agent closer to the user's goal. This is more nuanced than a simple success/failure check.
+
+**The open challenge:** Automated judges used in stepwise evaluation tend to be task-specific — they work well for the task they were designed for but are hard to generalize. More general judges exist but don't come with strong quality guarantees. Finding judges that are both reliable and broadly applicable is still an unsolved problem.
+
+**Trajectory-Based Assessment:**
+
+While stepwise evaluation checks individual actions in isolation, trajectory-based assessment looks at the entire sequence of steps together — comparing the path the agent actually took against an expected optimal path. This gives a broader picture of how well the agent reasons and makes decisions, especially around which tools it used and in what order.
+
+- **Google Vertex AI** and **LangSmith** both support this kind of trajectory-level analysis
+- **AgentEvals** takes it further — it can evaluate trajectories with or without a reference path, using an LLM as a judge. It also supports graph-based evaluation for frameworks like LangGraph, where the agent is modeled as a graph of nodes and transitions — checking whether the agent followed the expected workflow and triggered the right nodes in the right order
+
+**The open challenge:** Trajectory evaluation is tricky because agents are non-deterministic — the same task can be solved in multiple valid ways. Defining one "correct" trajectory as the reference and penalizing anything different is an oversimplification. This makes it hard to build reliable trajectory benchmarks.
+
+**Datasets:**
+
+Good evaluation requires good test data — and building that data is its own challenge. Most frameworks help with this in three ways:
+
+1. **Annotation tools** — built-in tools to label and curate evaluation data
+2. **Human-in-the-loop evaluation** — collecting human feedback from real production runs and using it to refine how the agent is configured
+3. **Extracting datasets from production logs** — turning actual real-world interactions into evaluation datasets, which makes the test data more grounded in reality
+
+Some platforms (like Patronus AI and Databricks Mosaic) also support **synthetic data generation** — using their own seed data to automatically create evaluation examples when real data is scarce.
+
+**A/B Comparisons:**
+
+Most frameworks let you run A/B comparisons — comparing two or more test runs side by side, looking at their inputs, outputs, and metrics. This is useful for figuring out whether a change to the agent actually improved things or made them worse.
+
+Some platforms (like Patronus AI) go further and let you compare aggregated results across multiple runs from completely different experimental setups — not just two versions of the same agent.
+
+All frameworks also let you drill down into individual trajectories to find specific failure points.
+
+**The open challenge:** Getting large-scale insights at the trajectory or stepwise level is still hard. Fine-grained analysis works well for a handful of examples but does not scale easily to thousands of runs.
+
+**Gym-like Environments:**
+
+The frameworks discussed so far mostly watch and measure agents passively — observing what they do in real or simulated scenarios. But sometimes you need a more active, controlled setup where the agent can interact with a simulated environment and you can run repeatable experiments. This is where gym-like frameworks come in.
+
+The concept comes from OpenAI Gym, which was originally built for training and testing Reinforcement Learning algorithms. The same idea has been adapted for LLM agents — giving them a dynamic, interactive environment to operate in, rather than just feeding them static inputs.
+
+These environments allow standardized evaluation across different benchmarks and have been proposed for specific agent types:
+- Web agents
+- AI research agents
+- Software engineering agents
