@@ -407,3 +407,68 @@ These environments allow standardized evaluation across different benchmarks and
 - Web agents
 - AI research agents
 - Software engineering agents
+
+## Discussion
+
+### Current Trends
+
+Looking across everything covered in this survey, two major forces are driving how agent benchmarks are being built today.
+
+**1. More realistic and harder benchmarks:**
+
+Early agent benchmarks were simple and artificial — clean environments, straightforward tasks. The field has clearly moved away from this:
+
+- Web agents went from basic MiniWob simulations to dynamic real-world environments like WebArena and VisualWebArena
+- Scientific agents went from narrow static benchmarks like LAB-Bench to full discovery simulations like DiscoveryWorld
+- SWE agents moved from synthetic coding problems to real GitHub issues in SWE-bench
+- Benchmarks like Natural Plan use simulated results from real tools like Google Calendar and Maps
+
+At the same time, tasks are getting harder on purpose — to keep pace with improving agents and make sure benchmarks still challenge them. SWE-bench, SWELancer, COREBench, GAIA, and TheAgentCompany are all deliberately difficult. A telling sign: the best agents in these papers sometimes score as low as 2%. This difficulty is important — it reveals real limitations and pushes progress in long-horizon planning, reasoning, and tool use.
+
+**2. Live, continuously updated benchmarks:**
+
+Static benchmarks have a shelf life problem — as agents get better, the benchmarks get saturated and stop being useful for telling agents apart. The trend now is toward benchmarks that keep evolving:
+
+- **BFCL** has gone through multiple versions, adding live datasets, organizational tools, and multi-turn evaluation
+- The **SWE-bench family** keeps expanding — Lite, Verified, SWE-bench+
+- **IntellAgent** was built as a more dynamic evolution of τ-Bench
+
+Keeping benchmarks fresh and relevant is just as important as making them hard.
+
+### Emergent Directions
+
+These are trends that are starting to appear but are not fully established yet — the areas where future research needs to go.
+
+**1. More fine-grained evaluation:**
+
+Most benchmarks today only tell you whether the agent succeeded or failed at the end — a single pass/fail score. This is too coarse. It doesn't tell you where the agent went wrong, why it picked the wrong tool, or where its reasoning broke down.
+
+The field needs standardized step-by-step evaluation metrics that track the agent's decisions throughout the task, not just the final outcome. WebCanvas, LangSmith, and Galileo are early examples of moving in this direction.
+
+**2. Cost and efficiency metrics:**
+
+Current evaluations almost always optimize for accuracy and ignore cost. But an agent that is accurate but uses 10x more tokens and API calls than needed is not practical to deploy. Future frameworks need to track:
+- Token usage
+- API costs
+- Inference time
+- Overall resource consumption
+
+Without standardized cost metrics, we risk building very capable but completely impractical agents.
+
+**3. Scaling and automating evaluation:**
+
+Hand-annotated benchmarks are slow, expensive, and go stale quickly. The field needs evaluation that can scale:
+- **Synthetic data generation** — automatically creating diverse, realistic test scenarios (IntellAgent and Databricks Mosaic are early examples)
+- **Agent-as-a-Judge** — using LLM agents to evaluate other agents. This reduces the need for human annotation and can capture more nuanced aspects of performance that rule-based metrics miss
+
+**4. Safety and compliance:**
+
+This is the biggest gap. Most current benchmarks barely test whether an agent is safe, trustworthy, or policy-compliant. Early efforts like AgentHarm and ST-WebAgentBench have started, but coverage is still thin.
+
+What is needed: comprehensive benchmarks that test agents against adversarial inputs, check for bias, and verify that they follow organizational and societal rules. This becomes especially important in multi-agent settings, where risks can emerge from agents interacting with each other in unexpected ways.
+
+## Conclusion
+
+The evaluation of LLM-based agents is a fast-moving field, because the agents themselves are getting more powerful and more autonomous every year. A lot of good work has been done — benchmarks have become more realistic, more dynamic, and much harder.
+
+But the gaps are real. Safety testing, fine-grained step-by-step evaluation, and cost-efficiency metrics are all underdeveloped. Closing these gaps is not just an academic exercise — it is what will make it possible to deploy these agents responsibly in the real world.
