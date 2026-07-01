@@ -170,7 +170,7 @@ In SPIRES, a schema defines exactly what information should be extracted from te
 
 **Figure 1 — Example Schema (Recipe)**
 
-![Figure 1: Example recipe schema](../../assets/spires-figure1.png)
+![Figure 1: Example recipe schema](../../../assets/spires-figure1.png)
 
 > The diagram shows a Recipe at the top. It breaks down into Steps, Ingredients, and Categories. Steps further break into Utensils, FoodItems (inputs/outputs), and Actions. Ingredients break into FoodItems and Quantities. Every leaf node (like FoodType or Unit) has an `id` (a real database identifier) and a `label` (a human-readable name). The "crows feet" symbols on arrows mean "multiple values allowed."
 
@@ -197,7 +197,7 @@ Every schema is made of **classes** (types of things) and **attributes** (proper
 
 **Figure 2 — Example text → structured YAML output**
 
-![Figure 2: Recipe text to YAML extraction example](../../assets/spires-figure2.png)
+![Figure 2: Recipe text to YAML extraction example](../../../assets/spires-figure2.png)
 
 > Given a few lines of recipe text ("On medium heat melt the butter and sauté the onion..."), SPIRES produces a structured YAML object. Each ingredient is mapped to a FOODON ontology ID (e.g., `FOODON:03301704` = onion, whole, raw). Each step lists its action, inputs, and outputs. Where no ontology term exists, a placeholder blank node is used (e.g., `_:ChoppedOnion`). Human-readable labels appear as comments in blue.
 
@@ -209,7 +209,7 @@ This output isn't just text — it's **machine-readable linked data** that can b
 
 **Figure 3 — The SPIRES pipeline**
 
-![Figure 3: Overview of the SPIRES approach](../../assets/spires-figure3.png)
+![Figure 3: Overview of the SPIRES approach](../../../assets/spires-figure3.png)
 
 > The pipeline: a **Schema** + **Text** go into **OntoGPT**. OntoGPT sends prompts to **GPT-3+** (via OpenAI API) and gets answers back. Those answers are then **grounded** against public databases and ontologies (over 1,000 of them). The final output is **Structured Data** — instances and relationships that match the schema exactly.
 
