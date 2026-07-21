@@ -1,0 +1,126 @@
+TITLE: AI Model vs Assistant vs Agent — What's the Difference?
+
+FORMAT: YouTube Short (~90 seconds)
+TONE: Fast, punchy, conversational
+EXAMPLE THREAD: Planning a Paris trip — same goal, escalating complexity
+
+---
+
+[HOOK — 0:00–0:05]
+🎙️ TALKING HEAD
+"Model, Assistant, Agent — everyone throws these words around.
+Let me show you the difference with one simple example."
+
+---
+
+[PART 1: AI MODEL — 0:05–0:30]
+
+🎙️ TALKING HEAD
+"Think of an AI model as a superpowered brain locked inside a room.
+It has read every book, every website, every research paper ever written.
+All the knowledge in the world — but no hands, no eyes, no way to act."
+
+🎬 SWITCH TO ANIMATION — show: a locked room, a glowing brain inside, a slot under the door
+(voiceover continues)
+"The only way to reach it? Slide a note under the door. It thinks. Slides one back."
+
+🎬 ANIMATION — show: note sliding in → brain lights up → note sliding back out
+
+🎙️ TALKING HEAD
+"So you ask it — 'Which are the best hotels in Paris?'
+
+It gives you a perfect answer. Names, ratings, neighbourhoods — all of it.
+Because it was trained on that data."
+
+🎬 ANIMATION — show: new note sliding in with "What's the cheapest flight to Paris next week?"
+(voiceover continues)
+"But now you ask — 'Can you find me the cheapest flight to Paris for next week?'"
+
+🎙️ TALKING HEAD
+"And it can't.
+
+Not because it's dumb. But because it was trained on old data — it has no idea what flights cost today.
+It can't open a browser. It can't check live prices.
+It's locked in that room. The world moves. It doesn't."
+
+---
+
+[PART 2: AI ASSISTANT — 0:30–0:55]
+
+🎙️ TALKING HEAD
+"So we bring in an Assistant.
+Think of it as a person standing right outside that door — with a phone, a browser, access to the internet."
+
+🎬 SWITCH TO ANIMATION — show: same locked door, a person standing outside with a phone
+
+🎙️ TALKING HEAD (voiceover)
+"You say — 'Find me the cheapest flight to Paris next week.'
+They go online, search, come back — 'Found it. Air France, $280, departs Friday.'
+
+You say — 'Book it.'
+They book it. Done."
+
+🎬 ANIMATION — show: person walking back to the door, standing idle, waiting
+
+(voiceover continues)
+"Then they walk back and stand at that door again. Waiting.
+
+Now you say — 'Search hotels near Eiffel Tower under $120.'
+They do it. Come back. Stand there again. Waiting.
+
+'Book the top one.' They book it. Back at the door. Waiting."
+
+🎙️ TALKING HEAD
+"You see the pattern?
+
+Every. Single. Step. You have to tell them.
+They will never do anything on their own.
+One task. Done. Back at the door."
+
+---
+
+[PART 3: AI AGENT — 0:55–1:20]
+
+🎙️ TALKING HEAD
+"Now the Agent.
+
+You don't give them steps.
+You just say — 'Book me the best budget-friendly Paris trip for next week.'
+
+They nod. And disappear."
+
+🎬 SWITCH TO ANIMATION — show: agent walking confidently away from you, heading to the door on their own
+
+(voiceover continues)
+"On their own — they go to the door. Search the cheapest flights. Book the best one.
+Go back to the door. Find hotels near the top spots. Book the best value one.
+Build a full day-by-day itinerary. Check if visa is needed. Add everything to your calendar."
+
+🎬 ANIMATION — show: rapid loop — agent going back and forth to the door across multiple tasks, all pieces falling into place: flight ticket ✓, hotel ✓, itinerary ✓
+
+(voiceover continues)
+"That loop — where it keeps going back to the brain on its own, task after task, until everything is done — that's the Agentic Loop.
+That thinking it does before each step — that's Chain of Thought."
+
+🎙️ TALKING HEAD
+"And while it's doing all of that?
+
+You're just sitting back. Relaxing.
+
+You didn't search flights. You didn't compare hotels. You didn't plan a single thing.
+You just gave one goal — and got back a full trip."
+
+---
+
+[OUTRO — 1:20–1:28]
+🎬 ANIMATION — text cards popping in one by one
+"Model = knows everything. Can't act. Can't browse live data.
+Assistant = can act, but needs you to direct every step.
+Agent = give it one goal. It figures out the rest."
+
+🎙️ TALKING HEAD
+"Follow if you want AI explained simply, every week."
+
+---
+
+HASHTAGS: #AI #ChatGPT #AIAgent #ArtificialIntelligence #TechExplained #Shorts
