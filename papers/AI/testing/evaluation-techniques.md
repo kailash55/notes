@@ -1,6 +1,6 @@
 # Evaluation Techniques
 
-> Source: eval.txt — "How we built an evaluation harness for Ask DoorDash" (DoorDash Engineering)
+> Source: https://careersatdoordash.com/blog/building-ask-doordash-part-three-evaluation/
 
 ## About this file
 
