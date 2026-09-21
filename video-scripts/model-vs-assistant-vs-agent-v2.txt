@@ -1,0 +1,77 @@
+TITLE: AI Model vs Assistant vs Agent — What's the Difference?
+
+FORMAT: YouTube Short (~60 seconds)
+TONE: Fast, punchy, conversational
+VERSION: V2 — Short & Direct
+
+---
+
+[HOOK — 0:00–0:04]
+🎙️ TALKING HEAD
+"Model, Assistant, Agent — let me show you the difference in 60 seconds."
+
+---
+
+[PART 1: AI MODEL — 0:04–0:18]
+
+🎙️ TALKING HEAD
+"An AI Model is a superpowered brain locked in a room.
+All the knowledge in the world — but no hands, no way to act."
+
+🎬 ANIMATION — show: locked room, glowing brain, note sliding in and out
+(voiceover)
+"Ask it 'best hotels in Paris?' — perfect answer.
+Ask it 'cheapest flight next week?' — it can't.
+It's trained on old data. It can't browse. It can't check live prices.
+Knowledge only. Zero action."
+
+---
+
+[PART 2: AI ASSISTANT — 0:18–0:38]
+
+🎙️ TALKING HEAD
+"An Assistant is a person standing outside that room — with a phone and internet."
+
+🎬 ANIMATION — show: person outside the door with a phone
+(voiceover)
+"'Find cheapest flight to Paris.' — They search. Come back. 'Air France, $280.' You say book it. Done. Back at the door.
+'Search hotels under $120.' Done. Back at the door.
+'Book the top one.' — 'Sorry, no rooms available.'
+Now it's your problem. You decide. You instruct. They go. Come back. Wait."
+
+🎙️ TALKING HEAD
+"Every step — you. Hit a wall — your problem.
+They never decide. They just do."
+
+---
+
+[PART 3: AI AGENT — 0:38–0:55]
+
+🎙️ TALKING HEAD
+"An Agent? You just say — 'Book me a budget Paris trip for next week.' That's it."
+
+🎬 ANIMATION — show: agent disappearing, rapidly looping to the door and back across tasks
+(voiceover)
+"They search flights. Book the best one. Find a hotel. Full? They find the next best — no questions asked.
+Build the itinerary. Check visa. Add to calendar.
+Loop after loop — that's the Agentic Loop.
+Thinking before every step — that's Chain of Thought."
+
+🎙️ TALKING HEAD
+"You gave one goal. You get back a full trip.
+While you were doing nothing."
+
+---
+
+[OUTRO — 0:55–1:02]
+🎬 ANIMATION — text cards
+"Model = knowledge, no action.
+Assistant = action, needs your every instruction.
+Agent = one goal, figures out the rest."
+
+🎙️ TALKING HEAD
+"Follow for more AI explained simply."
+
+---
+
+HASHTAGS: #AI #ChatGPT #AIAgent #ArtificialIntelligence #TechExplained #Shorts

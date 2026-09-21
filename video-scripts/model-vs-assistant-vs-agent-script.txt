@@ -19,7 +19,7 @@ Let me show you the difference with one simple example."
 "Think of an AI model as a superpowered brain locked inside a room.
 It has read every book, every website, every research paper ever written.
 All the knowledge in the world — but no hands, no eyes, no way to act."
-
+ 
 🎬 SWITCH TO ANIMATION — show: a locked room, a glowing brain inside, a slot under the door
 (voiceover continues)
 "The only way to reach it? Slide a note under the door. It thinks. Slides one back."
@@ -27,8 +27,7 @@ All the knowledge in the world — but no hands, no eyes, no way to act."
 🎬 ANIMATION — show: note sliding in → brain lights up → note sliding back out
 
 🎙️ TALKING HEAD
-"So you ask it — 'Which are the best hotels in Paris?'
-
+ 
 It gives you a perfect answer. Names, ratings, neighbourhoods — all of it.
 Because it was trained on that data."
 
@@ -68,13 +67,18 @@ They book it. Done."
 Now you say — 'Search hotels near Eiffel Tower under $120.'
 They do it. Come back. Stand there again. Waiting.
 
-'Book the top one.' They book it. Back at the door. Waiting."
+'Book the top one.'
+They try — but come back. 'Sorry, no rooms available for those dates.'
+
+Now it's your problem again.
+You have to say — 'Okay find the next best option.' They go. Come back. 'Found one.' 'Book it.' They book it. Back at the door. Waiting."
 
 🎙️ TALKING HEAD
 "You see the pattern?
 
 Every. Single. Step. You have to tell them.
-They will never do anything on their own.
+Hit a dead end? They bring it back to you.
+They will never make a decision on their own.
 One task. Done. Back at the door."
 
 ---
@@ -93,8 +97,9 @@ They nod. And disappear."
 
 (voiceover continues)
 "On their own — they go to the door. Search the cheapest flights. Book the best one.
-Go back to the door. Find hotels near the top spots. Book the best value one.
-Build a full day-by-day itinerary. Check if visa is needed. Add everything to your calendar."
+Go back to the door. Find hotels near the top spots. Try to book — hotel's full?
+Doesn't come back to you. Finds the next best alternative. Books it.
+Builds a full day-by-day itinerary. Checks if visa is needed. Adds everything to your calendar."
 
 🎬 ANIMATION — show: rapid loop — agent going back and forth to the door across multiple tasks, all pieces falling into place: flight ticket ✓, hotel ✓, itinerary ✓
 
