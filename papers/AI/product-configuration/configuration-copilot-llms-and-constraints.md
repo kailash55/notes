@@ -1,6 +1,6 @@
 # Configuration Copilot: Towards Integrating Large Language Models and Constraints
 
-> Source: Kogler, Chen, Falkner, Haselböck, Wallner (Siemens AG Österreich), ConfWS'24. /Users/kd/.hermes/cache/documents/doc_d6d7ac8524b6_paper14.pdf
+> Source: Kogler, Chen, Falkner, Haselböck, Wallner (Siemens AG Österreich), ConfWS'24. https://ceur-ws.org/Vol-3812/paper14.pdf
 
 ## Abstract
 
