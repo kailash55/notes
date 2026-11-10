@@ -1,2 +1,5 @@
 .DS_Store
 .claude/
+
+# Book screenshots stay local; figures live in the notes as Mermaid
+books/**/image*.png
