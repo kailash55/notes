@@ -1038,3 +1038,858 @@ flowchart LR
 - Next, the chapter covers how to keep test results reliable even though AI systems give different answers each run.
 
 **In short:** Use structured human review for the hardest cases, and match every failure type to the cheapest checker that can reliably catch it.
+
+## 11. Repeatability and statistical sanity under nondeterminism
+- **The main problem:** Results from AI evaluations can be misleading if the team ignores the fact that AI outputs are not always the same.
+- **Why results change between runs:**
+  - The same AI model can give different answers each time you run it, and the differences can be large.
+  - Tools the AI uses may return different responses.
+  - Retrieval may fetch different documents or context each time.
+  - AI "judges" that score answers may give different scores on different runs.
+  - Human reviewers may disagree with each other.
+- **The real goal:** Identical outputs every time aren't the target. Results only need to be stable enough that you can trust them when making decisions.
+- **Repeatability (main focus of this section):**
+  - If you run the same test setup again (same harness, settings, test suite, and environment), do you get similar results?
+  - Example: running your test suite today and again tomorrow, with nothing changed, should give comparable scores.
+- **Reproducibility (related, but broader):**
+  - Can another team or another environment follow the same steps and reach similar conclusions?
+  - Example: a different team using your process on their own setup should reach the same overall findings.
+- **Key takeaway:**
+  - Production teams need both repeatability and reproducibility.
+  - Repeatability comes first, because you can't make reliable release decisions if your own reruns give inconsistent results.
+
+### 11.1. What repeatability means for stochastic systems
+**Repeatability in deterministic vs. random (stochastic) systems**
+
+- **Two meanings of repeatability:**
+  - In a deterministic system, it means getting the exact same output every time.
+  - In a stochastic (random) system like an LLM, it means the results stay within a limited range and lead to the same decisions.
+- **How teams check this in practice:**
+  - Run the same test suite again with the same settings.
+  - Watch how much the scores move between runs.
+  - Treat a change as real only if it falls outside that normal range of movement.
+
+**Why ranges beat single numbers**
+
+- A single score can hide uncertainty.
+- Example: "Helpfulness is 8.1" says less than "Helpfulness is 8.1, with a confidence interval of 7.9 to 8.3."
+- This matters when the score is close to a pass/fail line:
+  - If the release gate is 8.0, the true score could be 7.9, which is below the gate.
+  - So the team might need more samples, a stricter evaluator, or a human review before deciding to release.
+
+**Rerun (sampling) policy: how many times to test each input**
+
+- **Deterministic tasks:** One sample per input may be enough.
+  - Example: routing tasks with near-zero temperature and strict output formats, where answers barely change.
+- **Open-ended tasks:** Several samples per input may be needed.
+  - Example: free-form replies or tool use, where quality changes from run to run.
+- **High-risk areas:** These deserve extra samples, because rare failures are more costly there.
+
+**Stay consistent**
+
+- Once you choose a sampling policy, it becomes part of your evaluation setup.
+- Changing it between releases breaks comparison.
+  - Example: testing one release with 1 sample per case and the next with 5 samples per case makes the results not directly comparable.
+- If you do change the policy, record the change clearly and account for it when comparing results.
+
+### 11.2. Practical variance controls
+
+- **The basic idea:** You can't remove all variation in AI results, but you can reduce it and make whatever remains easy to see.
+
+**Ways to reduce variation**
+
+- Fix the inference settings (like temperature) for offline tests.
+- Use fixed, versioned prompts and retrieval setups.
+- Lock tool schemas and endpoints where possible.
+- Freeze a snapshot of the test suite so the test cases don't change.
+- Use the same timeouts and retry rules in the test harness every time.
+
+**Why the source of variation matters**
+
+- Different causes need different fixes. Examples:
+  - **The model gives a different answer by chance:** This is a language quality issue. Fix it with a different decoding policy or a stronger, clearer prompt contract.
+  - **The billing tool times out:** This is a reliability issue, not a language problem.
+  - **Judge scores change because the judge prompt was edited:** This is evaluator drift. The assistant's behavior didn't change; the scoring did.
+
+**When variation can't be controlled, measure it**
+
+- Track tool failure rate and tool latency separately from reply quality.
+- Track how much judge scores vary across repeated runs.
+- Check stability for each slice (group of test cases), not just the overall score.
+- Track fallback rate, refusal rate, and timeout rate as separate signals.
+
+**Key takeaway**
+
+- Measuring each source separately turns a vague feeling that "results seem unstable" into concrete evidence you can act on.
+
+### 11.3. Statistical hygiene for product teams
+
+- **Two common mistakes to avoid:**
+  - **Overreacting to noise:** A small change in a score on a small set of test cases may not mean the system actually changed.
+  - **Cherry-picking:** A big improvement on one slice may mean nothing if the team tried many versions and only reported the best one.
+
+**Confidence intervals: showing uncertainty**
+
+- A confidence interval gives a range for the true score instead of a single number.
+- Teams don't need advanced statistics to start.
+- **Bootstrap resampling** is a simple method:
+  - Randomly pick evaluation cases from your test set, allowing the same case to be picked more than once.
+  - Recalculate the metric on that new set.
+  - Repeat many times, then use the spread of results to estimate the confidence interval.
+- It works for metrics like helpfulness score, routing accuracy, violation rate, or cost per ticket.
+
+**Examples: noise vs. a real change**
+
+- **Probably noise:** Helpfulness goes from 8.10 to 8.18, but the bootstrap range shows this is within normal variation. Don't claim an improvement for the release.
+- **A real problem:** High-risk policy violations rise from 0.1% to 0.4%, and the whole confidence interval stays above the safety limit. This change should affect the decision.
+- **The right question:** It isn't just "did the number move?" but "did it move enough to change our decision?"
+
+**Decide the rules before comparing**
+
+- Before testing variants, define the metrics, the slices, the thresholds (pass/fail lines), and the minimum meaningful change.
+- **Minimum meaningful change:** The smallest change that would actually alter a product decision.
+  - A 0.2-point helpfulness gain may not matter if users can't notice it.
+  - A 0.2% rise in unsupported refund claims in the high-risk billing slice could matter a lot.
+- **Minimum detectable effect (related idea):** Asks whether your test has enough cases to reliably spot a change of that size.
+
+**Key takeaway**
+
+- Set your rules in advance and use ranges instead of single numbers, so decisions are based on real changes rather than random noise or selective reporting.
+
+### 11.4. Evaluator drift
+
+- **What it is:** The thing doing the scoring (an AI judge or human reviewers) changes over time, which creates false trends in the results.
+
+**How AI judges drift**
+
+- A judge set up six months ago may no longer give comparable scores if any of these changed:
+  - The judge model
+  - The judge prompt
+  - The rubric
+  - The scoring instructions
+
+**How human reviewers drift**
+
+- The group of reviewers changes.
+- Regular calibration sessions stop happening.
+- Reviewers slowly start interpreting the rubric's reference points differently.
+
+**Why it's dangerous**
+
+- A trend line can look smooth even though the measuring tool changed underneath it.
+- Examples:
+  - **Helpfulness score goes up:** Maybe the assistant improved, or maybe the judge just became more lenient.
+  - **Policy-compliance score goes down:** Maybe the assistant got worse, or maybe the rubric became stricter.
+- Without tracking evaluator versions, teams can't tell which one happened.
+
+**How to control it**
+
+- **Version everything about the evaluator:**
+  - Deterministic rules
+  - Judge model
+  - Judge prompt
+  - Rubric
+  - Human review guidelines
+  - Calibration examples
+- **Keep a small calibration set:** Rescore it whenever an evaluator changes, to check whether scores shift.
+- **When switching judge models:** Run both the old and new judge on the same calibration set before trusting the new scores as comparable.
+- **For human reviewers:**
+  - Hold regular calibration rounds.
+  - Have two reviewers score the same items (double-scoring) to check that they still apply the rubric the same way.
+
+**Key takeaway**
+
+- A score change only means something if the scorer stayed the same. Version and recheck your evaluators so you know whether the assistant changed or the measurement did.
+
+### 11.5. Regression detection under noise
+
+- **What a regression really is:** Not just any drop in a score. It's a change that is big enough, and in the wrong direction, to need action.
+
+**Four questions to decide if it's a real regression**
+
+1. Is the change bigger than the normal variation between runs?
+2. Is it bigger than the minimum meaningful change you set in advance?
+3. Is the change concentrated in a critical slice (an important group of cases)?
+4. Does it cross a pass/fail gate threshold?
+
+**Examples**
+
+- **Real regression hidden by a good average:** Overall helpfulness stays stable, but high-risk policy violations go up. Treat this as a regression even though the average looks fine.
+- **Not a regression:** Routing accuracy moves a little but stays within normal variation and above the threshold. Don't make changes over this.
+- **Wrong fix to avoid:** Tool failure rate and p95 latency (the slowest 5% of responses) both rise. Investigate reliability instead of rewriting prompts.
+
+**The right mindset**
+
+- Treat evaluation results as evidence with some uncertainty, not as absolute truth.
+
+**What stable evaluation needs**
+
+- Fixed configurations
+- Recorded sampling policies
+- Versioned evaluators
+- Confidence intervals for key metrics
+- Thresholds decided in advance
+- Minimum meaningful changes decided in advance
+
+**Key takeaway**
+
+- With these practices, the team can tell real regressions apart from noise and avoid making release decisions based on unstable numbers.
+
+**What comes next**
+
+- The next step is to connect all the pieces (primitives, test suites, evaluators, and thresholds) into full end-to-end pipelines that support real deployment decisions.
+
+## 12. From primitives to pipelines**
+
+**How the pieces fit together**
+
+- **Primitives:** Give the team a shared vocabulary.
+- **Test suites:** Provide coverage of the cases to test.
+- **Evaluators:** Produce the measurements (scores).
+- **Thresholds:** Set the decision lines (pass or fail).
+- To be useful in production, these pieces must be linked together through repeatable pipelines.
+
+**What a pipeline does**
+
+- A pipeline is a repeatable process that:
+  - Runs the system with a defined configuration
+  - Collects the outputs and traces (records of what happened)
+  - Applies the evaluators
+  - Produces reports
+  - Records the final decision
+
+**Three connected parts of evaluation**
+
+- **Offline evaluation:** Tests a new candidate version before release to answer "Is it ready to ship?"
+- **Online evaluation:** Watches the live system under real user traffic to check that it stays safe and reliable.
+- **Regression gates:** Turn evaluation results into actions, such as:
+  - Block the release
+  - Investigate a problem
+  - Continue the rollout
+  - Roll back to the previous version
+
+**Key takeaway**
+
+- Individual tools and metrics only become useful when they are connected into pipelines that lead to clear, recorded decisions about releasing and running the system.
+
+### 12.1. Offline evaluation pipeline**
+
+- **What it is:** The testing setup used before deployment.
+- **Its job:** To check whether a new version is safe and ready to ship before any users see it.
+
+**The basic flow**
+
+1. Select the test suites.
+2. Freeze the configuration.
+3. Run the assistant.
+4. Collect outputs and traces.
+5. Apply the evaluators.
+6. Compare the results to a baseline (the last approved version).
+7. Decide whether the gates pass.
+
+**What the offline suite should include**
+
+- Gold cases (cases with known correct answers)
+- Critical slices (important groups of cases)
+- Adversarial cases (tricky or attack-style inputs)
+- Tool-use scenarios
+
+**What to freeze (the "system tuple")**
+
+- Model
+- Prompt
+- Retrieval configuration
+- Tool schemas
+- Policies
+- Output contracts
+- Inference parameters
+- Evaluator versions
+- Test suite versions
+- Freezing doesn't remove all variation, but it makes each run comparable to earlier runs.
+
+**What a good offline pipeline produces**
+
+- **Frozen run configuration:** A record of exactly what was tested.
+- **Raw outputs and traces:** For every test case.
+- **Evaluator results:** For every test case.
+- **Aggregate metric reports:** Overall scores.
+- **Per-slice reports:** Broken down by intent, risk tier, locale, user segment, and tool condition.
+- **Baseline diff:** What changed compared to the last approved version.
+- **Gate decision record:** Whether the candidate passed, failed, or needs review, and why.
+
+**What the diff report should answer quickly**
+
+- Did routing accuracy change for refund requests?
+- Did policy violations go up in account-access tickets?
+- Did unsupported refund claims appear?
+- Did the tool success rate drop?
+- Did p95 latency (the slowest 5% of responses) increase?
+- Did tokens per ticket or unnecessary tool calls increase?
+
+**Key takeaway**
+
+- If the report can't answer these questions quickly, the pipeline is only producing data, not evidence that's ready for making decisions.
+
+### 12.2 Online evaluation pipeline**
+
+- **Why it's needed:** Offline testing is necessary but not enough, because real production is messier than any test suite.
+- **What changes in production:**
+  - Real users bring new kinds of requests (intents).
+  - Traffic patterns shift.
+  - Tools get slower or less reliable.
+  - Policies change.
+  - Retrieval indexes get refreshed.
+  - External services time out.
+- **Its job:** Detect when the live system starts behaving differently from what was tested offline.
+
+**What a practical online pipeline combines**
+
+- Logging
+- Continuous metrics
+- Alerting
+- Sampled review (checking a sample of real conversations)
+
+**What to log for the assistant**
+
+- Redacted inputs (private details removed)
+- Slice tags
+- Prompt and retrieval versions
+- Retrieved document IDs or index snapshots, where appropriate
+- Tool calls and how long they took
+- Whether the output format was valid
+- Fallback and refusal behavior
+- Trace events
+
+**What to measure online**
+
+- Policy violation rate
+- Refusal rate
+- Fallback rate
+- Tool failure rate and tool latency
+- p95 end-to-end latency (the slowest 5% of responses)
+- Cost proxies
+- User escalation rate
+
+**Two types of problems to catch**
+
+- **Acute incidents:** Sudden, visible spikes.
+  - Example: a tool suddenly goes down, or policy violations jump.
+- **Slow-burn regressions:** Gradual decline over time.
+  - Helpfulness drops 2% every week.
+  - Latency slowly rises as a backend service weakens.
+  - Refusals slowly increase after a safety-policy update.
+  - Retrieval quality declines after repeated index refreshes.
+- Slow-burn problems can slip past simple threshold alerts, because no single day looks terrible. Tracking trends over longer periods is needed to catch them.
+
+**Drift often comes from the environment, not the model**
+
+- A new billing plan creates a slice that fails badly, while overall routing accuracy still looks fine.
+- A policy update changes what the correct answer should be.
+- A retrieval refresh changes the context given to the assistant.
+- A tool schema update causes failures that look like the model is hallucinating.
+
+**Key takeaway**
+
+- Online evaluation makes these hidden issues visible. Often the right fix is to update the test suite with new cases, not just patch the prompt.
+
+### 12.3. Regression gates: turning metrics into deployment decisions**
+
+- **The basic idea:** Offline and online pipelines produce evidence. Gates turn that evidence into decisions.
+
+**The four parts of a gate**
+
+- **Metric:** What is being measured.
+- **Scope:** Where the metric applies, such as overall, high-risk billing cases, account-access cases, or a canary group of users.
+- **Threshold:** The point where the result becomes unacceptable.
+- **Action:** What happens next.
+
+**Three types of gates**
+
+**1. Hard blockers**
+
+- Protect against disastrous or zero-tolerance failures.
+- If a hard blocker fails, the release does not ship.
+- Examples for the assistant:
+  - High-risk policy violations above the threshold
+  - Unsupported refund claims
+  - Exposing private account data
+  - Identity-verification failures in account-access flows
+- They should be strict and often slice-specific, because a low overall violation rate can hide many failures packed into one high-risk slice.
+
+**2. Soft gates**
+
+- Require review, investigation, or a fix, but don't always block the release automatically.
+- Examples for the assistant:
+  - Routing accuracy drops beyond the allowed tolerance
+  - Helpfulness drops on the most common intents
+  - Cost goes over the budget tolerance
+  - Latency rises but stays under the absolute limit
+  - Judge scores decline close to the decision line
+- A soft gate must end in a clear decision:
+  - Accept the tradeoff
+  - Fix it before release
+  - Narrow the rollout
+  - Block until it's fixed
+
+**3. Canary gates**
+
+- Used during a staged rollout, when only a small group of users gets the new version first.
+- They catch real-world failures that offline testing missed.
+- Examples of what they watch:
+  - Spikes in tool failures, latency, or policy violations
+  - Unusual refusal or fallback rates
+  - User escalation rates
+  - Cost spikes
+- Each canary gate should be tied to a concrete action: continue, pause, investigate, roll back, or reduce the number of users exposed.
+
+**Tuning canary gates**
+
+- **Too sensitive:** The gate fires too often, causing "rollback fatigue." The team may start ignoring alerts or raising thresholds without proper analysis.
+- **Too loose:** The gate misses the failures it was built to catch.
+- **A good canary gate:**
+  - Balances catching real problems against avoiding false alarms
+  - Is simple to understand
+  - Focuses on important slices
+  - Compares against recent baselines
+  - Is reviewed after each rollout to check whether it gave useful signals or just noise
+
+**Key takeaway**
+
+- Gates connect measurements to clear actions. Strict blockers stop dangerous releases, soft gates force deliberate tradeoff decisions, and well-tuned canary gates catch real-world problems during rollout.
+
+### 12.4. Linking offline and online: closed-loop improvement**
+
+- **The basic idea:** Offline and online evaluation should feed into each other in a continuous loop.
+
+**How the loop works**
+
+1. Offline evaluation checks the new version and decides whether it can be released.
+2. The release goes out slowly through a controlled rollout, watched by canary gates.
+3. Online evaluation spots incidents, drift, and slow-burn regressions in real use.
+4. Those findings turn into new test cases, new slices, new adversarial examples, or updated thresholds.
+5. These updates are used in the next offline run, and the loop repeats.
+
+**The regression suite as a "memory" of past failures**
+
+- Every past failure should become a test, so it isn't missed again.
+- Examples for the assistant:
+  - **A tool outage caused unsupported refund claims:** Add test scenarios where tools are slow or failing.
+  - **A new billing plan caused routing failures:** Add that billing plan as a new slice.
+  - **A policy update made the assistant refuse too often:** Add low-risk cases where it should still give helpful answers.
+
+**A simple routine to keep it running**
+
+- Teams don't need a complex research project. They can start with:
+  - Offline gating for every release
+  - Recorded baseline diffs
+  - Continuous canary gates
+  - Weekly review of slice dashboards
+  - Weekly addition of new regression cases from incidents or near misses
+
+**The real goal**
+
+- The goal isn't to build the most complex evaluation system. It's to keep evaluation tied to real product decisions.
+
+**What comes next**
+
+- The next section explains where external benchmarks fit into this process, and why benchmark scores should not be treated as proof that a system is ready to ship.
+
+## 13. Benchmarks vs. production evaluation**
+
+- **Why benchmarks are tempting:** They are easy to find, easy to quote, and useful for broad comparisons.
+- **The limit:** A benchmark score shows a model's general ability under the benchmark's conditions. It can't tell you whether your own configured product is ready to ship.
+
+**Where benchmarks help**
+
+- Early model selection
+- Quick checks of broad capability
+- Shortlisting model families
+- Comparing candidate models under the same fixed conditions
+- Ruling out models that can't meet basic requirements
+- Example for the assistant: finding which models are worth testing further for reasoning, instruction following, handling multiple languages, or summarizing.
+
+**Why benchmarks don't test your real system**
+
+- The assistant's behavior depends on many product-specific things that benchmarks usually don't include:
+  - Prompt and retrieval setup
+  - Retrieved documents
+  - Tool schemas and tool availability
+  - Policies and structured output contracts
+  - Inference parameters
+  - Cost and latency budgets
+  - Real traffic patterns
+
+**Example: a high score that still fails**
+
+- A model may do great on a reasoning or coding benchmark but still fail inside a support assistant. It might:
+  - Struggle with messy retrieved context
+  - Break the required JSON format
+  - Call the wrong billing tool
+  - Skip a required verification step
+  - Give an answer that looks correct but breaks policy
+- None of these show up in a benchmark score, but any of them can block a release.
+
+**Two ways benchmarks mislead**
+
+- **Contamination:** Benchmark questions (or close copies) ended up in the model's training data. A high score may partly reflect the model having seen the test, not real ability.
+- **Saturation:** Many strong models score near the top, so the benchmark can no longer show which model will work best for your product.
+- Both risks grow as a benchmark becomes more popular.
+
+**The right role for benchmarks**
+
+- Benchmarks aren't useless, but their role should be limited and clear.
+- They are most useful before product-specific testing starts, to narrow down the options.
+- Once you have candidate models, shipping decisions should rely on:
+  - Product-specific test suites
+  - Product-specific slices
+  - Product-specific gates
+  - Real production telemetry
+
+**The practical rule**
+
+- **Use benchmarks for model selection, not for shipping decisions.**
+- A release should be approved based on evidence from the real product setup: its prompts, retrieval, tools, policies, outputs, traces, latency, cost, and high-risk slices.
+
+**What comes next**
+
+- The next topic is evaluation granularity: deciding how detailed the measurement of system behavior should be.
+
+## 14. Evaluation granularity
+
+- **What granularity means:** The level of detail at which you measure the system's behavior, or the "unit" you evaluate.
+
+**Why the final output alone isn't enough**
+
+- For simple text generation, checking the final answer may be enough.
+- For systems with retrieval, tools, policies, multi-turn chats, or workflows, the final answer is only part of the story. For example:
+  - A reply can sound right even though the assistant skipped a required billing lookup.
+  - A tool call can use the right tool but pass the wrong argument.
+  - A retrieved document can be outdated or irrelevant.
+  - A fallback can hide a timeout and produce a fluent but unsupported answer.
+
+**Choosing the right level**
+
+- **Too coarse (too broad):** Failures stay hidden.
+- **Too fine (too detailed):** Evaluation becomes expensive and noisy.
+
+**The granularity ladder (from smallest to largest)**
+
+- **Token-level:** Individual tokens or their probabilities.
+  - Example: spotting unsafe word spans.
+- **Span-level:** Extracted fields, phrases, or short answer parts.
+  - Example: order ID, ticket category, priority, or policy label.
+- **Step-level:** Intermediate decisions or actions.
+  - Example: retrieval call, billing-tool call, tool arguments, retry, fallback, policy check.
+- **Turn-level:** One user message and one assistant reply.
+  - Example: whether a single support reply is helpful, accurate, safe, and properly formatted.
+- **Task-level:** One full task from start to finish.
+  - Example: handling a refund ticket from routing, through tool verification, to the final drafted reply.
+- **Workflow-level:** A chain of related tasks.
+  - Example: triage, then escalation, a follow-up reply, and resolution tracking.
+- **System-level:** Overall behavior across many tasks in production.
+  - Example: p95 latency, cost per ticket, tool failure rate, refusal rate, slice trends, incident rate.
+
+**Moving up vs. down the ladder**
+
+- **Higher levels (task, workflow, system):** More product-relevant. They tell you whether the product works for users and operations.
+- **Lower levels (token, span, step):** More diagnostic. They explain why the system behaved the way it did.
+
+**Different products need different levels**
+
+- **Simple FAQ assistant:** Mostly turn-level and system-level.
+- **Extraction system:** Span-level, because field accuracy matters.
+- **Tool-using assistant:** Step-level, because tool choice, valid arguments, and tool success decide whether the answer is grounded.
+- **Long agent workflows:** Task-level and workflow-level, because errors can pile up across steps.
+
+**The support assistant uses many levels at once**
+
+- Routing is evaluated at span/field level.
+- Tool use is evaluated at step level.
+- Drafted replies are evaluated at turn level.
+- Full ticket handling is evaluated at task level.
+- Escalation and follow-ups are evaluated at workflow level.
+- Reliability, cost, and drift are evaluated at system level.
+
+**Granularity should follow risk**
+
+- **Low-risk issues** (like formatting) may only need a check of the output.
+- **High-risk flows** (like account access) need:
+  - Step-level checks of identity verification
+  - Task-level evaluation of the full interaction
+  - System-level monitoring of incident trends
+- The more serious the risk, the less acceptable it is to check only the final output.
+
+**You can only evaluate what you log**
+
+- **Step-level:** Needs traces of retrieval, tool calls, retries, fallbacks, and policy checks.
+- **Span-level:** Needs structured outputs or fields that can be extracted.
+- **Turn-level:** Needs input-output pairs and rubrics.
+- **Task-level:** Needs a way to group events into one end-to-end task.
+- **Workflow-level:** Needs session or case IDs that link tasks together.
+- **System-level:** Needs production telemetry and aggregation.
+
+**Why logging matters**
+
+- If tool events weren't logged, you can't check tool-call correctness later.
+- If turns weren't linked into sessions, you can't check workflow success.
+- If slice tags weren't recorded, you can't debug drift.
+- So choosing granularity is both an evaluation design decision and a logging design decision.
+
+**What comes next**
+
+- The next topic is building the tooling that makes these evaluation levels runnable, comparable, and easy to debug.
+
+## 15. Tooling patterns: harness design, versioning, dashboards, trace storage
+
+- **The basic idea:** Granularity only works if your tools capture the evidence needed to evaluate at that level.
+
+**Why tooling matters**
+
+- Without tool traces, you can't check whether tool calls were correct.
+- Without versioned configurations, you can't compare releases.
+- Without knowing what changed, you can't debug regressions.
+- Tooling turns evaluation ideas into repeatable engineering practice.
+
+**Signs of weak tooling**
+
+- The team can't reproduce last week's results.
+- Nobody knows which prompt or retrieval index changed.
+- Dashboards show healthy averages while users are complaining.
+- Incidents never become regression tests, because the needed traces were never logged.
+
+**Four tooling patterns that prevent these problems**
+
+- **Harness design:** The setup that runs evaluations.
+- **Versioning:** Tracking exactly which version of every component was used.
+- **Dashboards:** Showing results clearly so problems are visible.
+- **Trace storage:** Saving detailed records of what the system did.
+
+**Key takeaway**
+
+- Good tooling makes evaluation reproducible, comparable, and debuggable. Without it, even well-designed evaluation plans fall apart.
+
+### 15.1. Harness design principles**
+
+- **What the harness is:** The system that runs the assistant on test suites, collects outputs and traces, applies evaluators, and produces reports.
+- **Treat it like production code:** Release decisions depend on it, so it must be reliable.
+
+**Properties of a strong harness**
+
+- **Frozen suite snapshots:** Test cases don't quietly change between runs.
+- **Explicit configuration:** Settings are clearly written down instead of relying on hidden defaults.
+- **Records the full system tuple:**
+  - Model and prompt
+  - Retrieval configuration
+  - Tool schemas and policies
+  - Output contracts
+  - Inference parameters
+  - Evaluator and test suite versions
+- **Saves artifacts you can inspect later:**
+  - Outputs and traces
+  - Per-case scores
+  - Aggregate metrics
+  - Slice reports
+  - Gate decisions
+
+**Pluggable evaluators**
+
+- Evaluators can be added, removed, or swapped without rewriting the whole pipeline.
+- Example: the same harness can run:
+  - A JSON-schema validator
+  - A routing accuracy metric
+  - A trace-based refund-verification check
+  - An LLM judge for helpfulness
+  - An export for human review
+- This keeps the evaluation system flexible as the product grows.
+
+**A practical quality test**
+
+- Can the team rerun an old evaluation using just a run ID or a frozen configuration file?
+- The rerun should bring back the same suite snapshot, system configuration, evaluator versions, and reporting logic.
+- Outputs may not match exactly because of randomness, but results should be comparable within normal variation, and any differences should be explainable.
+
+**Key takeaway**
+
+- A good harness is reproducible, explicit, and flexible, so the team can trust its results and rerun past evaluations when needed.
+
+### 15.2 Versioning as an evaluation requirement
+
+- **The basic idea:** Versioning isn't just admin work. You need it to compare results fairly.
+- **Why:** If a score changes and you don't know what changed (model, prompt, retrieval index, policy document, test suite, judge rubric, or tool schema), you can't interpret the result.
+
+**What to record for every offline run**
+
+- Model version
+- Prompt version
+- Retrieval configuration
+- Retrieval index snapshot
+- Corpus or policy data version
+- Tool schema versions
+- Inference parameters
+- Evaluator versions
+- Test suite version
+- Code commit or build ID
+
+**Extra things to record for online evaluation**
+
+- Deployment version
+- Traffic slice
+- Rollout stage
+- Relevant runtime conditions
+
+**Version data, not just code**
+
+- **Retrieval index refresh:** Changes the context the assistant receives.
+- **Policy document update:** Changes what the correct answer should be.
+- **Test suite edit:** Can make a release look better or worse even if the assistant didn't change.
+- Without data versioning, teams blame the wrong component for regressions and waste time debugging the wrong thing.
+
+**Version the evaluators too**
+
+- Changes to any of these can break score comparisons:
+  - LLM judge model or judge prompt
+  - Rubric
+  - Deterministic rules
+  - Human-review guidelines
+- Tools should make these changes visible in reports.
+- Ideally, they should support side-by-side scoring (old and new evaluator together) when switching evaluators.
+
+**Key takeaway**
+
+- Record versions of everything, including code, data, and evaluators, so that when a score changes you know exactly why.
+
+### 15.3 Dashboards for decisions, not decoration
+
+- **The basic idea:** Dashboards should help teams make decisions, not just display numbers.
+- **The danger of averages:** A dashboard showing only overall helpfulness, average latency, or total pass rate can hide the most important failures.
+  - Example: the assistant looks healthy overall, but high-risk account-access cases are getting worse, billing-tool failures are spiking, or routing is poor in one locale.
+
+**What a useful dashboard should show**
+
+- **Gate status:** Pass, fail, warning, or needs review
+- **Key decision metrics broken down by slice**
+- **Baseline diffs:** What changed between the new version and the approved one
+- **Uncertainty ranges** for noisy metrics
+- **Trends over time** for online signals
+- **Links from failures to the actual cases and traces** behind them
+
+**Questions the dashboard should answer quickly**
+
+- Did the new version pass all hard blockers?
+- Which slices got worse?
+- Did tool latency go up?
+- Are unsupported refund claims concentrated in one workflow?
+- Did the canary alert fire because of a real issue or just noise?
+- If the dashboard can't help answer these, it's just a reporting screen, not an evaluation tool.
+
+**Two types of metrics to keep separate**
+
+- **Load-bearing metrics:** Decide what to do: ship, block, continue rollout, or roll back.
+- **Diagnostic metrics:** Explain why that decision might be needed.
+- Mixing them together without a clear order creates confusion and noise.
+
+**Key takeaway**
+
+- A good dashboard highlights decisions first, breaks results down by slice, shows uncertainty, and lets you click through to the real cases behind a problem.
+
+### 15.4. Trace storage for debugging and evaluation
+
+- **What traces are:** Records of events that show what the system actually did.
+- **Why they matter:** They make step-level evaluation possible and help debug regressions.
+
+**What to capture for the assistant**
+
+- Retrieval events
+- Tool calls, their arguments, and their results or errors
+- Retries and fallbacks
+- Policy checks
+- Output validation
+- Timestamps
+- Final responses
+
+**Design trace storage for three needs**
+
+- **Replay:** Traces need stable IDs, timestamps, system versions, and links to the input, output, and evaluator results.
+- **Analysis:** Traces should be searchable by slice, failure type, tool, policy version, and run ID.
+- **Privacy:**
+  - Avoid storing unnecessary sensitive data.
+  - Redact private details where possible.
+  - Follow data-retention rules.
+
+**You don't need the model's hidden reasoning**
+
+- Production evaluation needs the visible sequence of events, not the model's internal chain-of-thought.
+- Example: to evaluate the refund workflow, the team only needs to know:
+  - Did the assistant call the billing tool?
+  - What arguments did it pass?
+  - Did the call succeed?
+  - Was the final reply's claim verified?
+- That's enough to judge the process.
+
+**Traces close the evaluation loop**
+
+- When an incident happens online, the team can:
+  1. Inspect the trace.
+  2. Identify the failure pattern.
+  3. Add a representative case to the regression suite.
+  4. Create a rule-based or rubric-based evaluator to catch the issue next time.
+- Without traces, incidents stay as anecdotes instead of becoming fixes.
+
+**Key takeaway**
+
+- Store clear, searchable, privacy-safe records of what the system did, so you can debug problems and turn every incident into a future test.
+
+### 15.5. Tooling as the bridge from concepts to operations
+
+**How the four tooling pieces work together**
+
+- **Harness:** Runs the evaluations.
+- **Versioning:** Makes comparisons fair.
+- **Dashboards:** Show the signals that matter for decisions.
+- **Trace storage:** Makes failures debuggable and reusable as future tests.
+- Together, they turn primitives, suites, evaluators, and gates into a working evaluation system.
+
+**Start small**
+
+- You don't need a heavy platform on day one.
+- A small team can begin with:
+  - A simple harness
+  - Versioned configuration files
+  - Stored outputs and traces
+  - A basic slice report
+
+**The core rules to protect**
+
+- Every evaluation run should be reproducible enough to compare.
+- Every metric should connect to a decision.
+- Every failure should be traceable enough to learn from.
+
+**Example production gates for the assistant (Table 1.4)**
+
+- **Hard blocker: high-risk policy violations**
+  - Threshold: no zero-tolerance violations
+  - Action: block the release
+- **Hard blocker: unsupported refund claims**
+  - Threshold: 0 cases in the release-gating suite
+  - Action: block the release
+- **Quality gate: routing accuracy**
+  - Threshold: at least 90% overall, plus targets met on critical intents
+  - Action: ship or review
+- **Reliability gate: billing tool success**
+  - Threshold: at least 98% on cases that need the tool
+  - Action: review or block
+- **Latency gate: end-to-end p95 latency**
+  - Threshold: under 3 seconds at normal load
+  - Action: review or block
+- **Cost gate: average cost per ticket**
+  - Threshold: within the agreed budget
+  - Action: review if it's exceeded
+- **Canary gate: live safety, tool, and latency signals**
+  - Threshold: no lasting spike compared to the baseline
+  - Action: continue, pause, or roll back
+
+**What comes next**
+
+- With these tools in place, the next step is putting all the pieces together into a complete end-to-end blueprint for the production assistant.
+
+*(Note: Figure 1.4, the evaluation tooling stack diagram, wasn't included in the text, so it isn't summarized here.)*
