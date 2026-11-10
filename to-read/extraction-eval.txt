@@ -1,0 +1,40 @@
+Here are the resources I'd use, grouped by what each helps with. For each I say briefly why it fits our printing-order extraction.
+
+## 1. How to brainstorm test cases (start here)
+
+- **[Beyond Accuracy: Behavioral Testing of NLP Models with CheckList](https://arxiv.org/abs/2005.04118)** (Ribeiro et al., ACL 2020 Best Paper; [code](https://github.com/marcotcr/checklist)). The best method for coming up with cases. You cross **capabilities** (vocabulary and synonyms, negation, coreference, changed values) with **test types**:
+  - basic "must work" cases
+  - paraphrases that must give the same output
+  - changes that must alter the output
+
+  That maps directly onto our categories, for example "matte" vs "Mat", "no lamination", and "actually make it 750". In a user study, people using it found about 3× more bugs.
+- **[Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/)** (Hamel Husain). Argues for building evals specific to your own task instead of generic benchmarks.
+- **[AI Evals: Everything You Need to Know (FAQ)](https://hamel.dev/blog/posts/evals-faq/)** (Hamel Husain). Covers the **dimensions** approach: list the axes that vary, such as product, how the quantity is written, process, exclusions and message style, then combine them to generate cases. It also covers error analysis: read real failures first, then write cases for them.
+- **[Evals, error analysis, and better prompts](https://www.lennysnewsletter.com/p/evals-error-analysis-and-better-prompts)** (Lenny's Newsletter, with Hamel Husain). The same process as a readable walkthrough.
+
+## 2. Building and maintaining a golden dataset
+
+- **[Golden dataset evaluation: build and maintain LLM test sets](https://langfuse.com/resources/engineering/golden-dataset-evaluation)** (Langfuse). How to cover common cases, cases that broke before, and adversarial phrasings, and how to avoid duplicate cases.
+- **[Building a "Golden Dataset" for AI Evaluation](https://www.getmaxim.ai/articles/building-a-golden-dataset-for-ai-evaluation-a-step-by-step-guide/)** (Maxim). A step-by-step guide, including having domain experts (your print sales team) write "must-pass" cases.
+- **[Test Cases, Goldens, and Datasets](https://www.confident-ai.com/docs/llm-evaluation/core-concepts/test-cases-goldens-datasets)** (Confident AI, the makers of DeepEval). Explains "golden" vs "test case", which matches our split between the case files and the results file.
+
+## 3. Evaluating extraction specifically
+
+- **[Task-Specific LLM Evals that Do & Don't Work](https://eugeneyan.com/writing/evals/)** (Eugene Yan). Has a section on extraction and classification: measure precision and recall per field, not just pass or fail. Our two metrics roughly correspond to these.
+- **[Beyond Exact Match: How Evaluation Methodology Dominates Model Choice in LLM-Based Product Attribute Extraction](https://arxiv.org/abs/2607.22949)** (arXiv, 2026). Finds that how you match answers (exact vs fuzzy) changes results about 23× more than which model you pick. This backs up our `$any` and normalisation rules, and it's a warning to write case answers carefully.
+- **[ExtractBench: A Benchmark and Evaluation Methodology for Complex Structured Extraction](https://arxiv.org/html/2602.12247v2)** (arXiv). How to score nested JSON extraction, which fits our components → processes → parameters shape.
+- **[Using LLMs for the Extraction and Normalization of Product Attribute Values](https://arxiv.org/abs/2403.02130)** (arXiv 2403.02130). Extracting product attributes and then normalising them to fixed values, like our "matte" → `Mat`.
+- **[ExtractGPT: Exploring the Potential of LLMs for Product Attribute Value Extraction](https://arxiv.org/html/2310.12537)** (arXiv). The kinds of errors LLMs make when extracting product attributes.
+- **[Structured Entity Extraction Using Large Language Models](https://arxiv.org/html/2402.04437v3)** (arXiv). Metrics for extracting entities with their properties, including partial credit.
+
+## 4. Generating more cases automatically (for later)
+
+- **[DeepEval Golden Synthesizer](https://deepeval.com/docs/golden-synthesizer)**, **[Generate Goldens From Scratch](https://deepeval.com/docs/synthesizer-generate-from-scratch)** and **[Generate Goldens From Goldens](https://deepeval.com/docs/synthesizer-generate-from-goldens)**. DeepEval can take your hand-written cases and produce harder variations of them. Useful once you have a good set of hand-written cases.
+- **[DeepEval Datasets](https://deepeval.com/docs/evaluation-datasets)**. How DeepEval stores and loads goldens.
+
+## 5. Practical blog posts
+
+- **[Using A Large Language Model For Entity Extraction](https://cobusgreyling.medium.com/using-a-large-language-model-for-entity-extraction-6fffb988eb15)** (Cobus Greyling, Medium). Hands-on examples of edge cases found by experimenting, such as several mentions of the same kind of thing in one message.
+- **[Evaluating LLM Apps in Python](https://dev.to/gpuneet/evaluating-llm-apps-in-python-ed5)** (DEV Community). A short practical guide to golden sets and structured-output checks in Python.
+
+**Suggested reading order:** CheckList, then the Hamel FAQ, then Eugene Yan, then the "Beyond Exact Match" paper, then the DeepEval Synthesizer when you want to scale up.
