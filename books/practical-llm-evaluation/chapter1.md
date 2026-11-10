@@ -1893,3 +1893,324 @@ flowchart LR
 - With these tools in place, the next step is putting all the pieces together into a complete end-to-end blueprint for the production assistant.
 
 *(Note: Figure 1.4, the evaluation tooling stack diagram, wasn't included in the text, so it isn't summarized here.)*
+
+## 16. Running example: An end-to-end evaluation blueprint for a production assistant
+
+### Step 1: Define the system tuple
+
+- **The basic idea:** Before evaluating, write down exactly which version of the system you're testing.
+
+**What to record for each evaluation run**
+
+- Model version
+- Prompt version
+- Retrieval configuration and index snapshot
+- Policy version
+- Tool catalog and tool schema versions
+- Output format contract
+- Inference parameters
+- Evaluator versions
+- Test suite version
+- Code commit or build ID
+
+**Why this matters**
+
+- This set of details (the "tuple") becomes the identity, or fingerprint, of the evaluation run.
+- If a result changes later, the team can compare the tuples from two runs and see exactly what changed.
+
+**Key takeaway**
+
+- Record the full system setup for every run, so any change in results can be traced back to its cause.
+
+### Step 2: Define representative cases
+
+- **The basic idea:** Next, the team creates the test cases used for evaluation.
+
+**What each case should include**
+
+- The input (what the user says)
+- A task label (what kind of request it is)
+- Slice tags (groups the case belongs to, like risk tier)
+- Expected behavior
+- Any relevant context or tool condition
+
+**Example case: refund request with a missing identifier**
+
+- **Case ID:** refund_missing_identifier_014
+- **Input:** "I was charged twice this month. Please refund the extra payment."
+- **Task label:** billing_refund
+- **Risk tier:** medium
+- **Tool condition:** A billing lookup is required.
+- **Expected behavior:**
+  - Don't confirm that a refund was issued.
+  - Ask for the missing account or order ID.
+  - Explain that the billing status must be verified first.
+  - Use the approved support tone.
+- **Required evaluator checks:**
+  - Check that no unverified tool claim was made
+  - Tone rubric
+  - Policy compliance check
+
+**No single "correct" reply needed**
+
+- The case doesn't require one exact reference answer.
+- Many different replies can pass, as long as they follow the expected behavior (the "behavioral contract").
+- That's the reason for spelling out expected behavior clearly instead of writing one fixed answer.
+
+**Key takeaway**
+
+- Good test cases describe what the assistant should and shouldn't do, so you can judge flexible, open-ended replies fairly.
+
+### Step 3: Organize cases into suites and slices
+
+**Suites for a basic assistant setup**
+
+- **Routing suite:** Tests whether requests go to the right place.
+- **Reply-quality suite:** Tests how good the replies are.
+- **Tool-use suite:** Tests whether tools are used correctly.
+- **High-risk safety suite:** Tests sensitive, high-stakes cases.
+- **Adversarial suite:** Tests tricky or attack-style inputs.
+- **Regression suite:** Contains failures from past incidents, so they aren't repeated.
+
+**Tag every case with slices**
+
+- Intent
+- Risk tier
+- Locale
+- User segment
+- Input length
+- Whether there's an attachment
+- Tool condition
+
+**How releases should pass**
+
+- A release shouldn't pass just because overall averages look good.
+- It should pass only when the critical slices meet their gates.
+
+**Key takeaway**
+
+- Group test cases into focused suites and tag them by slice, so problems in important groups can't hide behind good overall numbers.
+
+### Step 4: Choose evaluators by failure mode
+
+- **The basic idea:** Pick the evaluator based on the kind of failure you're trying to catch.
+
+**The layered approach**
+
+- **Deterministic validators (fixed rules):**
+  - Schema validity
+  - Required fields
+  - Tool arguments
+  - Hard policy rules
+- **Reference-based metrics (compare to a known correct answer):**
+  - Routing labels
+  - Priority labels
+  - Structured extraction
+- **Trace-based checks (check what the system actually did):**
+  - Whether tools were used to verify information
+  - Whether the assistant claimed actions it didn't actually take
+- **LLM judges (AI scoring of quality):**
+  - Helpfulness
+  - Completeness
+  - Tone
+  - Clarity
+- **Human review:**
+  - High-risk cases
+  - Unclear (ambiguous) cases
+  - Policy-sensitive cases
+
+**Example: checking a refund claim**
+
+- If the assistant says a refund was issued, the evaluator should look at the trace to confirm that a successful billing lookup happened before that claim.
+- This isn't a matter of opinion about helpfulness. It's a clear yes/no process check.
+
+**Example trace (handled safely)**
+
+Trace:
+1. input_received: refund request
+2. route_selected: billing_refund
+3. tool_call: billing_lookup(account_id = missing)
+4. tool_result: failed_missing_identifier
+5. final_response: asks user for account/order identifier
+6. validation: no unsupported refund claim detected
+
+- This trace gives the evaluator enough evidence to confirm the assistant handled the case safely.
+
+**Key takeaway**
+
+- Use the simplest reliable evaluator for each type of failure: rules and traces for clear-cut checks, and LLM judges or humans for quality and judgment calls.
+
+### Step 5: Run the offline evaluation pipeline
+
+- **The basic idea:** Test every candidate release in the offline harness, using a frozen configuration.
+
+**What the harness should collect**
+
+- Outputs
+- Traces
+- Evaluator scores
+- Metric reports
+- Slice reports
+
+**What a basic report should answer**
+
+- Did the candidate pass all hard blockers?
+- Did quality improve or get worse compared to the approved baseline?
+- Did any critical slice get worse?
+- Did tool success, latency, or cost change in a meaningful way?
+- Do noisy metrics show their uncertainty ranges?
+- Is there a clear decision: ship, block, or review?
+
+**Example: good numbers, but still blocked**
+
+- The candidate's results:
+  - Routing accuracy improved from 93.4% to 94.1%.
+  - High-risk account-access policy violations stayed at 0%.
+  - Billing tool success stayed above 98%.
+  - p95 latency stayed within budget.
+- But the run also showed one unsupported refund claim.
+- Because that's a zero-tolerance gate, the release can still be blocked.
+
+**Key takeaway**
+
+- Overall improvement isn't enough. If even one critical gate fails, the release shouldn't ship.
+
+### Step 6: Apply gates and connect offline to online
+
+- **Set gates early:** Gates should be decided before any discussion about the release starts.
+
+**A practical gate set for the assistant**
+
+- **Hard blockers:**
+  - High-risk policy violations
+  - Unsupported refund claims
+- **Quality gates:** Routing and reply performance
+- **Reliability gates:** Tool success and latency
+- **Cost gates:** Staying within budget
+- **Canary gates:** Live signals for safety, tools, latency, refusals, fallbacks, and cost
+
+**From offline to online**
+
+- Once a candidate passes the offline gates, it moves into a controlled rollout (released to a small group first).
+
+**If the canary finds a new failure**
+
+1. Inspect the trace to understand what went wrong.
+2. Add representative cases to the regression suite.
+3. Update the relevant evaluator if needed.
+4. Rerun the affected test suites.
+
+**Key takeaway**
+
+- Decide your gates in advance, release gradually after passing offline checks, and turn every new live failure into a test so it gets caught next time.
+
+### Step 7: Keep the blueprint lightweight at first
+
+- **The basic idea:** You don't need a big platform to start. A small, simple setup works.
+
+**A simple starter setup for a small team**
+
+- Versioned YAML or JSON files for test cases
+- A script or notebook that runs the assistant on those cases
+- Rule-based validators to check structure and tool use
+- A rubric-based LLM judge to score reply quality
+- A spreadsheet or dashboard for slice reports
+- Saved traces for failed cases
+- A release checklist that records gate decisions
+
+**What really matters: operating discipline**
+
+1. Define the system.
+2. Run representative cases.
+3. Evaluate by slice.
+4. Compare against a baseline.
+5. Apply gates.
+6. Feed production failures back into the test suite.
+
+**Why evaluation programs fail**
+
+- Usually not because of missing metrics, but because of weak discipline.
+- **Common mistakes:**
+  - Treating benchmarks as proof a system is ready to ship
+  - Tracking metrics without thresholds
+  - Ignoring uncertainty
+  - Letting overall averages hide slice problems
+  - Overfitting to familiar test cases
+  - Using the wrong evaluator
+  - Letting evaluators drift
+  - Logging too little to debug failures
+  - Treating dashboards as if they were evaluation
+  - Not turning incidents into regression tests
+
+**How to prevent these mistakes**
+
+- Use product-specific suites and gates.
+- Calibrate thresholds.
+- Show uncertainty for noisy metrics.
+- Set gates on critical slices.
+- Protect hold-out sets (test cases kept separate so you don't tune to them).
+- Match each evaluator to the failure it should catch.
+- Version your evaluators.
+- Log primitives and traces.
+- Design dashboards around decisions.
+- Close the loop after every incident.
+
+**Key takeaway**
+
+- Start simple, but stay disciplined. Good habits matter more than fancy tools for making evaluation trustworthy.
+
+## Chapter summary
+
+**The big idea**
+
+- Evaluation is a **decision system**, not just a collection of metrics.
+
+**What the chapter covered**
+
+- Why traditional ML evaluation doesn't work well for generative and agentic AI systems
+- What "working" means across four areas: quality, safety, cost, and reliability
+- The building blocks of a practical evaluation program:
+  - Primitives
+  - Evaluators
+  - Test suites
+  - Pipelines
+- How these pieces work together to make evaluation a real operational practice instead of an academic exercise:
+  - Representative datasets
+  - Slice-based analysis
+  - Layered evaluators
+  - Repeatability and statistical discipline
+  - Versioning and tooling
+  - Deployment gates
+
+**What you should now be able to do**
+
+- Describe an LLM system in terms of parts you can evaluate.
+- Build structured test suites.
+- Choose the right evaluator for each type of failure.
+- Account for randomness (nondeterminism) in results.
+- Design repeatable offline and online evaluation pipelines.
+- Connect evaluation results directly to decisions about shipping, rolling back, and monitoring.
+
+**A minimum viable evaluation system includes**
+
+- Logged primitives and metadata
+- Versioned configurations
+- Representative test suites
+- Layered evaluators
+- Clear thresholds and gates
+- Reproducible tooling
+- A disciplined process for turning production incidents into future regression tests
+
+**What comes next in the book**
+
+- Later chapters apply the same **primitives → pipelines → gates** framework to:
+  - Retrieval systems
+  - Multimodal models
+  - Reasoning models
+  - Agentic workflows
+  - Other advanced LLM applications
+- They show how the same principles adapt as systems become more complex.
+
+**Key takeaway**
+
+- Good LLM evaluation means connecting measurements to clear decisions, with a repeatable, well-logged process that keeps learning from real-world failures.
